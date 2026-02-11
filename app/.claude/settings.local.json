@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mcp list)",
+      "Bash(claude mcp list:*)",
+      "Bash(npm config:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(git commit:*)",
+      "Bash(west build:*)",
+      "Bash(where west:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:docs.zephyrproject.org)",
+      "WebFetch(domain:devzone.nordicsemi.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
