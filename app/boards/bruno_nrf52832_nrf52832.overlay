@@ -8,6 +8,10 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
+    aliases {
+        accel0 = &fxos8700;
+    };
+
     chosen {
         zephyr,display = &ili9341;
     };
@@ -34,7 +38,8 @@
     };
 };
 
-&i2c0 { status = "disabled"; };
+/* I2C0 habilitado para o FXOS8700CQ */
+/* &i2c0 { status = "disabled"; }; */
 &i2c1 { status = "disabled"; };
 &spi0 { status = "disabled"; };
 &adc  { status = "disabled"; };
@@ -51,6 +56,34 @@
     pinctrl-0 = <&spi1_default>;
     pinctrl-1 = <&spi1_sleep>;
     pinctrl-names = "default", "sleep";
+
+    /* FXLS8974 substituido pelo FXOS8700CQ (6-axis accel+mag) */
+    /* fxls8974: fxls8974@1 {
+        compatible = "nxp,fxls8974";
+        reg = <1>;
+        spi-max-frequency = <4000000>;
+        range = <2>;
+    }; */
+
+    /* FXOS8700 movido para I2C0 */
+    /* fxos8700: fxos8700@1 {
+        compatible = "nxp,fxos8700";
+        reg = <1>;
+        spi-max-frequency = <1000000>;
+        range = <2>;
+    }; */
+};
+
+&i2c0 {
+    compatible = "nordic,nrf-twim"; /* TWIM com EasyDMA (substitui nrf-twi legado) */
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_STANDARD>; /* 100 kHz */
+
+    fxos8700: fxos8700@1e {
+        compatible = "nxp,fxos8700";
+        reg = <0x1e>;
+        range = <2>;
+    };
 };
 
 &pinctrl {

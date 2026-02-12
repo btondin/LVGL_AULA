@@ -1,95 +1,121 @@
 /*
- * Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
+ * Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/display.h>
-#include <lvgl.h>
-#include <lvgl_mem.h>
-#include <lvgl_zephyr.h>
-#include <lv_demos.h>
-#include <stdio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <lvgl.h>
+#include <stdio.h>
+#include <string.h>
+#include <zephyr/kernel.h>
+
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(app);
+LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
+
+static lv_obj_t *chart1;
+static lv_chart_series_t *ser_x;
+static lv_chart_series_t *ser_y;
+static lv_chart_series_t *ser_z;
+static lv_timer_t *sensor_timer;
+
+const struct device *accel_sensor;
+
+/* Timer handler: fetches sensor data and appends it to the chart */
+static void sensor_timer_cb(lv_timer_t *timer)
+{
+	struct sensor_value accel[3];
+	int rc = sensor_sample_fetch(accel_sensor);
+
+	if (rc == 0) {
+		rc = sensor_channel_get(accel_sensor, SENSOR_CHAN_ACCEL_XYZ, accel);
+	}
+	if (rc < 0) {
+		LOG_ERR("ERROR: Update failed: %d\n", rc);
+		return;
+	}
+	lv_chart_set_next_value(chart1, ser_x, sensor_value_to_double(&accel[0]));
+	lv_chart_set_next_value(chart1, ser_y, sensor_value_to_double(&accel[1]));
+	lv_chart_set_next_value(chart1, ser_z, sensor_value_to_double(&accel[2]));
+}
+
+static void create_accelerometer_chart(lv_obj_t *parent)
+{
+	chart1 = lv_chart_create(parent);
+	lv_obj_set_size(chart1, LV_HOR_RES, LV_VER_RES);
+	lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);
+	lv_chart_set_div_line_count(chart1, 5, 8);
+	lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -20, 20); /* roughly -/+ 2G */
+	lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_SHIFT);
+
+	ser_x = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED),
+				    LV_CHART_AXIS_PRIMARY_Y);
+	ser_y = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_BLUE),
+				    LV_CHART_AXIS_PRIMARY_Y);
+	ser_z = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_GREEN),
+				    LV_CHART_AXIS_PRIMARY_Y);
+
+	lv_chart_set_point_count(chart1, CONFIG_SAMPLE_CHART_POINTS_PER_SERIES);
+
+	/* Do not display point markers on the data */
+	lv_obj_set_style_size(chart1, 0, 0, LV_PART_INDICATOR);
+}
+
+/* Scan do barramento I2C - lista todos os enderecos que respondem */
+static void i2c_scan(const struct device *i2c_dev)
+{
+	uint8_t dummy;
+
+	LOG_INF("I2C scan on %s...", i2c_dev->name);
+	for (uint8_t addr = 0x08; addr < 0x78; addr++) {
+		int ret = i2c_read(i2c_dev, &dummy, 1, addr);
+		if (ret == 0) {
+			LOG_INF("  Found device at 0x%02X", addr);
+		}
+	}
+	LOG_INF("I2C scan done.");
+}
 
 int main(void)
 {
 	const struct device *display_dev;
-#ifdef CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC
-	k_timepoint_t next_scene_switch;
-	lv_demo_render_scene_t cur_scene = LV_DEMO_RENDER_SCENE_FILL;
-#endif /* CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC */
+
+	/* I2C scan para debug - remover depois */
+	const struct device *i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+	if (device_is_ready(i2c_dev)) {
+		i2c_scan(i2c_dev);
+	} else {
+		LOG_ERR("I2C0 not ready");
+	}
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Device not ready, aborting test");
-		return 0;
+		return -ENODEV;
 	}
 
-	lvgl_lock();
+	accel_sensor = DEVICE_DT_GET(DT_ALIAS(accel0));
+	if (!device_is_ready(accel_sensor)) {
+		LOG_ERR("Device %s is not ready\n", accel_sensor->name);
+		return -ENODEV;
+	}
 
-#if defined(CONFIG_LV_Z_DEMO_MUSIC)
-	lv_demo_music();
-#elif defined(CONFIG_LV_Z_DEMO_BENCHMARK)
-	lv_demo_benchmark();
-#elif defined(CONFIG_LV_Z_DEMO_STRESS)
-	lv_demo_stress();
-#elif defined(CONFIG_LV_Z_DEMO_WIDGETS)
-	lv_demo_widgets();
-#elif defined(CONFIG_LV_Z_DEMO_KEYPAD_AND_ENCODER)
-	lv_demo_keypad_encoder();
-#elif defined(CONFIG_LV_Z_DEMO_RENDER)
-
-#ifdef CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC
-	lv_demo_render(cur_scene, 255);
-	next_scene_switch =
-		sys_timepoint_calc(K_SECONDS(CONFIG_LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT));
-#else
-	lv_demo_render(CONFIG_LV_Z_DEMO_RENDER_SCENE_INDEX, 255);
-#endif /* CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC */
-
-#else
-#error Enable one of the demos CONFIG_LV_Z_DEMO_*
-#endif
-
-#ifndef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
+	create_accelerometer_chart(lv_screen_active());
+	sensor_timer = lv_timer_create(sensor_timer_cb,
+					1000 / CONFIG_SAMPLE_ACCEL_SAMPLING_RATE,
+					NULL);
 	lv_timer_handler();
-#endif
-	lvgl_unlock();
-
 	display_blanking_off(display_dev);
-#ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
-	lvgl_print_heap_info(false);
-#else
-	printf("lvgl in malloc mode\n");
-#endif
-	while (1) {
-#ifndef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
-		uint32_t sleep_ms;
 
-		lvgl_lock();
-		sleep_ms = lv_timer_handler();
-		lvgl_unlock();
+	while (1) {
+		uint32_t sleep_ms = lv_timer_handler();
 
 		k_msleep(MIN(sleep_ms, INT32_MAX));
-#else
-		/* LVGL managed by dedicated workqueue, just put an application side delay */
-		k_msleep(10);
-#endif
-#ifdef CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC
-		if (sys_timepoint_expired(next_scene_switch)) {
-			cur_scene = (cur_scene + 1) % LV_DEMO_RENDER_SCENE_NUM;
-			lvgl_lock();
-			lv_demo_render(cur_scene, 255);
-			lvgl_unlock();
-			next_scene_switch = sys_timepoint_calc(
-				K_SECONDS(CONFIG_LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT));
-		}
-#endif /* CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC */
 	}
 
 	return 0;
