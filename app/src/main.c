@@ -1,4 +1,6 @@
 /*
+ * LVGL usage example on Zephyr RTOS
+ *
  * Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
  *
  * SPDX-License-Identifier: Apache-2.0
