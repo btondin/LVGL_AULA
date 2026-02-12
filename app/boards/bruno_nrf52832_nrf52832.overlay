@@ -16,6 +16,12 @@
         zephyr,display = &ili9341;
     };
 
+    lvgl_pointer {
+        compatible = "zephyr,lvgl-pointer-input";
+        input = <&xpt2046>;
+        invert-x;
+    };
+
     mipi_dbi {
         compatible = "zephyr,mipi-dbi-spi";
         spi-dev = <&spi1>;
@@ -51,7 +57,8 @@
     #address-cells = <1>;
     #size-cells = <0>;
 
-    cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+    cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>,
+                <&gpio0 16 GPIO_ACTIVE_LOW>;
 
     pinctrl-0 = <&spi1_default>;
     pinctrl-1 = <&spi1_sleep>;
@@ -72,6 +79,21 @@
         spi-max-frequency = <1000000>;
         range = <2>;
     }; */
+
+    xpt2046: xpt2046@1 {
+        compatible = "xptek,xpt2046";
+        reg = <1>;
+        spi-max-frequency = <2000000>;
+        int-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+        touchscreen-size-x = <240>;
+        touchscreen-size-y = <320>;
+        min-x = <200>;
+        min-y = <200>;
+        max-x = <3800>;
+        max-y = <3800>;
+        z-threshold = <100>;
+        reads = <3>;
+    };
 };
 
 &i2c0 {

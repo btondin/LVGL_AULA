@@ -46,10 +46,35 @@ static void sensor_timer_cb(lv_timer_t *timer)
 	lv_chart_set_next_value(chart1, ser_z, sensor_value_to_double(&accel[2]));
 }
 
+/* Callback do botao de teste do touch */
+static void btn_event_cb(lv_event_t *e)
+{
+	static int count = 0;
+	lv_obj_t *btn = lv_event_get_target(e);
+	lv_obj_t *label = lv_obj_get_child(btn, 0);
+
+	count++;
+	lv_label_set_text_fmt(label, "Touch: %d", count);
+	LOG_INF("Button pressed %d times", count);
+}
+
+static void create_touch_test_btn(lv_obj_t *parent)
+{
+	lv_obj_t *btn = lv_btn_create(parent);
+	lv_obj_set_size(btn, 100, 40);
+	lv_obj_align(btn, LV_ALIGN_TOP_RIGHT, -5, 5);
+	lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, NULL);
+
+	lv_obj_t *label = lv_label_create(btn);
+	lv_label_set_text(label, "Touch: 0");
+	lv_obj_center(label);
+}
+
 static void create_accelerometer_chart(lv_obj_t *parent)
 {
 	chart1 = lv_chart_create(parent);
-	lv_obj_set_size(chart1, LV_HOR_RES, LV_VER_RES);
+	lv_obj_set_size(chart1, LV_HOR_RES, LV_VER_RES - 50);
+	lv_obj_align(chart1, LV_ALIGN_BOTTOM_MID, 0, 0);
 	lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);
 	lv_chart_set_div_line_count(chart1, 5, 8);
 	lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -20, 20); /* roughly -/+ 2G */
@@ -107,6 +132,7 @@ int main(void)
 		return -ENODEV;
 	}
 
+	create_touch_test_btn(lv_screen_active());
 	create_accelerometer_chart(lv_screen_active());
 	sensor_timer = lv_timer_create(sensor_timer_cb,
 					1000 / CONFIG_SAMPLE_ACCEL_SAMPLING_RATE,
