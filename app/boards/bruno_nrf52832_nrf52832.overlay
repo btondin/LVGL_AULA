@@ -1,6 +1,6 @@
 /*
- * TFT SPI - ILI9341 240x320
- * Compatible: "ilitek,ili9341"
+ * TFT SPI - ST7789V 240x240 (sem CS)
+ * Compatible: "sitronix,st7789v"
  * Uses MIPI DBI (SPI mode) interface
  */
 
@@ -10,12 +10,6 @@
 / {
 	aliases {
 		accel0 = &fxos8700;
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&xpt2046>;
-		invert-x;
 	};
 
 	chosen {
@@ -30,22 +24,24 @@
 		reset-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		write-only;
 		#address-cells = <1>;
-		#size-cells = <0>;
+		#size-cells = <0>;        
 
 		st7789v_waveshare_240x240: st7789v@0 {
 			compatible = "sitronix,st7789v";
 			reg = <0>;
-			mipi-max-frequency = <8000000>;         /* 8MHz - safe for nRF52832 */
+			mipi-max-frequency = <10000000>;         /* 8MHz */
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			mipi-cpol;
+			mipi-cpha;
 			width = <240>;
-			height = <320>;
+			height = <240>;
 			x-offset = <0>;
 			y-offset = <0>;
 			vcom = <0x19>;
 			gctrl = <0x35>;
 			vrhs = <0x12>;
 			vdvs = <0x20>;
-			mdac = <0x08>;	/* bit3=1: BGR panel */
+			mdac = <0x00>;
 			gamma = <0x01>;
 			colmod = <0x05>;
 			lcm = <0x2c>;
@@ -73,28 +69,11 @@
     #address-cells = <1>;
     #size-cells = <0>;
 
-    cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>,
-                <&gpio0 16 GPIO_ACTIVE_LOW>;
+    cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;  /* dummy CS - não precisa conectar */
 
     pinctrl-0 = <&spi1_default>;
     pinctrl-1 = <&spi1_sleep>;
     pinctrl-names = "default", "sleep";
-
-
-    xpt2046: xpt2046@1 {
-        compatible = "xptek,xpt2046";
-        reg = <1>;
-        spi-max-frequency = <2000000>;
-        int-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
-        touchscreen-size-x = <240>;
-        touchscreen-size-y = <320>;
-        min-x = <200>;
-        min-y = <200>;
-        max-x = <3800>;
-        max-y = <3800>;
-        z-threshold = <100>;
-        reads = <3>;
-    };
 };
 
 &i2c0 {
