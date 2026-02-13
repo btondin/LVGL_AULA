@@ -8,40 +8,56 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-    aliases {
-        accel0 = &fxos8700;
-    };
+	aliases {
+		accel0 = &fxos8700;
+	};
 
-    chosen {
-        zephyr,display = &ili9341;
-    };
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&xpt2046>;
+		invert-x;
+	};
 
-    lvgl_pointer {
-        compatible = "zephyr,lvgl-pointer-input";
-        input = <&xpt2046>;
-        invert-x;
-    };
+	chosen {
+		zephyr,display = &st7789v_waveshare_240x240;
+	};
 
-    mipi_dbi {
-        compatible = "zephyr,mipi-dbi-spi";
-        spi-dev = <&spi1>;
-        dc-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
-        reset-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
-        #address-cells = <1>;
-        #size-cells = <0>;
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		status = "okay";
+		spi-dev = <&spi1>;
+		dc-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-        ili9341: ili9341@0 {
-            compatible = "ilitek,ili9341";
-            reg = <0>;
-            mipi-max-frequency = <16000000>;
-            mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
-
-            width = <240>;
-            height = <320>;
-            pixel-format = <0>;
-            rotation = <180>;
-        };
-    };
+		st7789v_waveshare_240x240: st7789v@0 {
+			compatible = "sitronix,st7789v";
+			reg = <0>;
+			mipi-max-frequency = <8000000>;         /* 8MHz - safe for nRF52832 */
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			width = <240>;
+			height = <320>;
+			x-offset = <0>;
+			y-offset = <0>;
+			vcom = <0x19>;
+			gctrl = <0x35>;
+			vrhs = <0x12>;
+			vdvs = <0x20>;
+			mdac = <0x00>;
+			gamma = <0x01>;
+			colmod = <0x05>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 01];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
+			nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
+			ram-param = [00 F0];
+			rgb-param = [CD 08 14];
+		};
+	};
 };
 
 /* I2C0 habilitado para o FXOS8700CQ */
@@ -64,21 +80,6 @@
     pinctrl-1 = <&spi1_sleep>;
     pinctrl-names = "default", "sleep";
 
-    /* FXLS8974 substituido pelo FXOS8700CQ (6-axis accel+mag) */
-    /* fxls8974: fxls8974@1 {
-        compatible = "nxp,fxls8974";
-        reg = <1>;
-        spi-max-frequency = <4000000>;
-        range = <2>;
-    }; */
-
-    /* FXOS8700 movido para I2C0 */
-    /* fxos8700: fxos8700@1 {
-        compatible = "nxp,fxos8700";
-        reg = <1>;
-        spi-max-frequency = <1000000>;
-        range = <2>;
-    }; */
 
     xpt2046: xpt2046@1 {
         compatible = "xptek,xpt2046";

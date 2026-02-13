@@ -20,10 +20,16 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
 
+#define ACCEL_SCALE 100
+#define G_MS2       9.81
+
 static lv_obj_t *chart1;
 static lv_chart_series_t *ser_x;
 static lv_chart_series_t *ser_y;
 static lv_chart_series_t *ser_z;
+static lv_obj_t *lbl_x;
+static lv_obj_t *lbl_y;
+static lv_obj_t *lbl_z;
 static lv_timer_t *sensor_timer;
 
 const struct device *accel_sensor;
@@ -41,43 +47,65 @@ static void sensor_timer_cb(lv_timer_t *timer)
 		LOG_ERR("ERROR: Update failed: %d\n", rc);
 		return;
 	}
-	lv_chart_set_next_value(chart1, ser_x, sensor_value_to_double(&accel[0]));
-	lv_chart_set_next_value(chart1, ser_y, sensor_value_to_double(&accel[1]));
-	lv_chart_set_next_value(chart1, ser_z, sensor_value_to_double(&accel[2]));
+
+	double ax = sensor_value_to_double(&accel[0]);
+	double ay = sensor_value_to_double(&accel[1]);
+	double az = sensor_value_to_double(&accel[2]);
+
+	lv_chart_set_next_value(chart1, ser_x, (int32_t)(ax * ACCEL_SCALE));
+	lv_chart_set_next_value(chart1, ser_y, (int32_t)(ay * ACCEL_SCALE));
+	lv_chart_set_next_value(chart1, ser_z, (int32_t)(az * ACCEL_SCALE));
+
+	/* Update legend with current values in G */
+	lv_label_set_text_fmt(lbl_x, "X:%.2fG", ax / G_MS2);
+	lv_label_set_text_fmt(lbl_y, "Y:%.2fG", ay / G_MS2);
+	lv_label_set_text_fmt(lbl_z, "Z:%.2fG", az / G_MS2);
 }
 
-/* Callback do botao de teste do touch */
-static void btn_event_cb(lv_event_t *e)
+static void create_legend(lv_obj_t *parent)
 {
-	static int count = 0;
-	lv_obj_t *btn = lv_event_get_target(e);
-	lv_obj_t *label = lv_obj_get_child(btn, 0);
+	lv_obj_t *legend = lv_obj_create(parent);
+	lv_obj_remove_style_all(legend);
+	lv_obj_set_size(legend, LV_HOR_RES, 30);
+	lv_obj_align(legend, LV_ALIGN_TOP_LEFT, 0, 0);
+	lv_obj_set_style_bg_color(legend, lv_color_white(), 0);
+	lv_obj_set_style_bg_opa(legend, LV_OPA_COVER, 0);
+	lv_obj_set_flex_flow(legend, LV_FLEX_FLOW_ROW);
+	lv_obj_set_flex_align(legend, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER,
+			      LV_FLEX_ALIGN_CENTER);
 
-	count++;
-	lv_label_set_text_fmt(label, "Touch: %d", count);
-	LOG_INF("Button pressed %d times", count);
+	static const struct {
+		const char *init;
+		lv_palette_t color;
+		lv_obj_t **lbl;
+	} items[] = {
+		{"X: --", LV_PALETTE_RED, &lbl_x},
+		{"Y: --", LV_PALETTE_BLUE, &lbl_y},
+		{"Z: --", LV_PALETTE_GREEN, &lbl_z},
+	};
+
+	for (int i = 0; i < 3; i++) {
+		lv_obj_t *lbl = lv_label_create(legend);
+		lv_label_set_text(lbl, items[i].init);
+		lv_obj_set_style_text_font(lbl, &lv_font_montserrat_16, 0);
+		lv_obj_set_style_text_color(lbl, lv_palette_main(items[i].color), 0);
+		*items[i].lbl = lbl;
+	}
 }
 
-static void create_touch_test_btn(lv_obj_t *parent)
-{
-	lv_obj_t *btn = lv_btn_create(parent);
-	lv_obj_set_size(btn, 100, 40);
-	lv_obj_align(btn, LV_ALIGN_TOP_RIGHT, -5, 5);
-	lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, NULL);
+#define CHART_TOP_MARGIN 30
 
-	lv_obj_t *label = lv_label_create(btn);
-	lv_label_set_text(label, "Touch: 0");
-	lv_obj_center(label);
-}
 
 static void create_accelerometer_chart(lv_obj_t *parent)
 {
+	create_legend(parent);
+
 	chart1 = lv_chart_create(parent);
-	lv_obj_set_size(chart1, LV_HOR_RES, LV_VER_RES - 50);
+	lv_obj_set_size(chart1, LV_HOR_RES, LV_VER_RES - CHART_TOP_MARGIN);
 	lv_obj_align(chart1, LV_ALIGN_BOTTOM_MID, 0, 0);
 	lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);
 	lv_chart_set_div_line_count(chart1, 5, 8);
-	lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -20, 20); /* roughly -/+ 2G */
+	lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -2000, 2000); /* -/+ 2G scaled x100 */
 	lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_SHIFT);
 
 	ser_x = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED),
@@ -132,7 +160,6 @@ int main(void)
 		return -ENODEV;
 	}
 
-	create_touch_test_btn(lv_screen_active());
 	create_accelerometer_chart(lv_screen_active());
 	sensor_timer = lv_timer_create(sensor_timer_cb,
 					1000 / CONFIG_SAMPLE_ACCEL_SAMPLING_RATE,
