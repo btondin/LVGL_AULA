@@ -1,127 +1,60 @@
-# SSD1306 Display Driver for Zephyr RTOS
+# LVGL Accelerometer Chart on Multiple Displays
 
-A Zephyr RTOS display driver implementation for SSD1306 OLED displays (128x64 monochrome), adapted from the ST7789V color display driver architecture. This project targets Nordic nRF52832 microcontrollers and demonstrates integration with Zephyr's display subsystem.
+Real-time accelerometer chart running on Zephyr RTOS with LVGL, targeting different TFT/OLED displays on a Nordic nRF52832. The application reads X, Y, Z data from an NXP FXOS8700CQ sensor and plots it as a live chart with per-axis G-force readout.
 
-## Features
+## Supported Displays
 
-- **SSD1306 OLED Support**: Driver implementation for 128x64 monochrome OLED displays using I2C/SPI interface
-- **Zephyr Display API**: Full integration with Zephyr's standard display subsystem
-- **Nordic nRF52832**: Optimized for Nordic Semiconductor's nRF52 series
-- **Hardware Abstraction**: Clean separation between hardware interface and display logic
-- **LVGL Ready**: Prepared for integration with LittlevGL graphics library
+| Display | Controller | Resolution | Interface | Status |
+|---------|-----------|------------|-----------|--------|
+| TFT 240x320 | ILI9341 | 240x320 | SPI (MIPI DBI) | Tested |
+| TFT 240x320 | ST7789V | 240x320 | SPI (MIPI DBI) | Tested |
 
-## Technical Foundation
+Switching between displays requires only changing the board overlay file — the application code stays the same.
 
-This driver is based on the ST7789V implementation and adapted for the SSD1306's unique characteristics:
+## Hardware
 
-- **Pixel Format**: Monochrome (1-bit per pixel) vs RGB565
-- **Memory Architecture**: Page-based memory layout vs pixel-based
-- **Command Set**: Adapted for SSD1306 controller differences
-- **Resolution**: 128x64 vs ST7789's typical 240x240
+- **MCU**: Nordic nRF52832 (custom board `bruno_nrf52832`)
+- **Accelerometer**: NXP FXOS8700CQ (I2C, address 0x1E)
+- **Display**: SPI TFT via MIPI DBI interface
+- **RTOS**: Zephyr 4.2 / nRF Connect SDK v3.2.1
+- **Graphics**: LVGL 9.3
 
-## Target Hardware
+## What It Does
 
-- **MCU**: Nordic nRF52832 (ARM Cortex-M4F)
-- **Display**: SSD1306-based OLED (128x64)
-- **Interface**: I2C or SPI (configurable via devicetree)
-- **RTOS**: Zephyr RTOS 3.2.1+
+- Reads accelerometer XYZ at a configurable sample rate
+- Plots a scrolling line chart (red = X, blue = Y, green = Z)
+- Shows live values in G on screen (e.g. `X:0.03G  Y:-0.01G  Z:1.00G`)
+- Values scaled x100 internally for integer chart resolution
 
 ## Project Structure
 
 ```
-SSD1306_DISP_ZEPHYR/
+LVGL_AULA/
 ├── app/
 │   ├── src/
-│   │   └── main.c              # Application entry point
+│   │   └── main.c                              # Application
 │   ├── boards/
-│   │   └── *.overlay           # Board-specific devicetree overlays
-│   ├── CMakeLists.txt          # Build configuration
-│   └── prj.conf                # Project configuration
+│   │   └── bruno_nrf52832_nrf52832.overlay      # Display & sensor devicetree
+│   ├── CMakeLists.txt
+│   └── prj.conf
 └── README.md
 ```
 
-## Getting Started
-
-### Prerequisites
-
-- Zephyr RTOS SDK 3.2.1 or later
-- Nordic nRF Connect SDK (optional, for nRF52 support)
-- ARM GCC toolchain
-- CMake 3.21+
-
-### Building
+## Building
 
 ```bash
 cd app
-west build -b bruno_nrf52832_nrf52832
-```
-
-### Flashing
-
-```bash
+west build -b bruno_nrf52832
 west flash
 ```
 
-## Configuration
+## Adding a New Display
 
-The driver can be configured through `prj.conf`:
-
-```conf
-# Display configuration
-CONFIG_DISPLAY=y
-CONFIG_MIPI_DBI=y
-CONFIG_MIPI_DBI_SPI=y
-
-# Logging
-CONFIG_LOG=y
-CONFIG_DISPLAY_LOG_LEVEL_DBG=y
-```
-
-## Devicetree Configuration
-
-Configure the SSD1306 display in your board overlay file:
-
-```dts
-&spi0 {
-    status = "okay";
-
-    ssd1306: ssd1306@0 {
-        compatible = "solomon,ssd1306fb";
-        reg = <0>;
-        spi-max-frequency = <4000000>;
-        /* Additional properties */
-    };
-};
-```
-
-## Project Status
-
-**Work in Progress** - Currently adapting ST7789V color display driver architecture to SSD1306 monochrome OLED requirements.
-
-### Roadmap
-
-- [ ] Implement SSD1306 command set
-- [ ] Add page-based memory management
-- [ ] Implement monochrome pixel format conversion
-- [ ] Add I2C interface support
-- [ ] Integrate with LVGL
-- [ ] Add example applications
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit issues and pull requests.
+1. Create or edit the board overlay (`boards/bruno_nrf52832_nrf52832.overlay`)
+2. Define the MIPI DBI node with the new display controller compatible
+3. Point `zephyr,display` chosen node to the new display
+4. Build — no changes needed in `main.c`
 
 ## License
 
-This project follows the Zephyr Project licensing:
-- SPDX-License-Identifier: Apache-2.0
-
-## References
-
-- [Zephyr Display Driver Documentation](https://docs.zephyrproject.org/latest/hardware/peripherals/display.html)
-- [SSD1306 Datasheet](https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf)
-- [ST7789V Reference Implementation](https://github.com/zephyrproject-rtos/zephyr/tree/main/drivers/display)
-
-## Author
-
-Developed as part of embedded systems development with Zephyr RTOS and Nordic nRF52 series microcontrollers.
+SPDX-License-Identifier: Apache-2.0
