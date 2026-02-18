@@ -1,6 +1,6 @@
 /*
- * TFT SPI - ST7789V 240x240 (sem CS)
- * Compatible: "sitronix,st7789v"
+ * OLED SPI - SSD1331 96x64 (colorido RGB)
+ * Compatible: "solomon,ssd1331"
  * Uses MIPI DBI (SPI mode) interface
  */
 
@@ -13,7 +13,7 @@
 	};
 
 	chosen {
-		zephyr,display = &st7789v_waveshare_240x240;
+		zephyr,display = &ssd1331;
 	};
 
 	mipi_dbi {
@@ -24,34 +24,27 @@
 		reset-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		write-only;
 		#address-cells = <1>;
-		#size-cells = <0>;        
+		#size-cells = <0>;
 
-		st7789v_waveshare_240x240: st7789v@0 {
-			compatible = "sitronix,st7789v";
+		ssd1331: ssd1331@0 {
+			compatible = "solomon,ssd1331";
 			reg = <0>;
-			mipi-max-frequency = <10000000>;         /* 8MHz */
+			mipi-max-frequency = <8000000>;
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
-			mipi-cpol;
-			mipi-cpha;
-			width = <240>;
-			height = <240>;
-			x-offset = <0>;
-			y-offset = <0>;
-			vcom = <0x19>;
-			gctrl = <0x35>;
-			vrhs = <0x12>;
-			vdvs = <0x20>;
-			mdac = <0x00>;
-			gamma = <0x01>;
-			colmod = <0x05>;
-			lcm = <0x2c>;
-			porch-param = [0c 0c 00 33 33];
-			cmd2en-param = [5a 69 02 01];
-			pwctrl1-param = [a4 a1];
-			pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
-			nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
-			ram-param = [00 F0];
-			rgb-param = [CD 08 14];
+			width = <96>;
+			height = <64>;
+			display-offset = <0>;
+			start-line = <0>;
+			multiplex-ratio = <63>;
+			phase-length = <0x31>;
+			oscillator-freq = <0xF0>;
+			precharge-time-a = <0x64>;
+			precharge-time-b = <0x78>;
+			precharge-time-c = <0x64>;
+			precharge-voltage = <0x3A>;
+			vcomh-voltage = <0x3E>;
+			current-att = <0x0F>;
+			remap-value = <0x72>;
 		};
 	};
 };
@@ -69,7 +62,7 @@
     #address-cells = <1>;
     #size-cells = <0>;
 
-    cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;  /* dummy CS - não precisa conectar */
+    cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 
     pinctrl-0 = <&spi1_default>;
     pinctrl-1 = <&spi1_sleep>;
@@ -77,9 +70,9 @@
 };
 
 &i2c0 {
-    compatible = "nordic,nrf-twim"; /* TWIM com EasyDMA (substitui nrf-twi legado) */
+    compatible = "nordic,nrf-twim";
     status = "okay";
-    clock-frequency = <I2C_BITRATE_STANDARD>; /* 100 kHz */
+    clock-frequency = <I2C_BITRATE_STANDARD>;
 
     fxos8700: fxos8700@1e {
         compatible = "nxp,fxos8700";

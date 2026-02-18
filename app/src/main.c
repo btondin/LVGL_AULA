@@ -13,6 +13,7 @@
 #include <zephyr/drivers/i2c.h>
 
 #include <lvgl.h>
+#include "lv_font_tiny5.h"
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/kernel.h>
@@ -57,18 +58,18 @@ static void sensor_timer_cb(lv_timer_t *timer)
 	lv_chart_set_next_value(chart1, ser_z, (int32_t)(az * ACCEL_SCALE));
 
 	/* Update legend with current values in G */
-	lv_label_set_text_fmt(lbl_x, "X:%.2fG", ax / G_MS2);
-	lv_label_set_text_fmt(lbl_y, "Y:%.2fG", ay / G_MS2);
-	lv_label_set_text_fmt(lbl_z, "Z:%.2fG", az / G_MS2);
+	lv_label_set_text_fmt(lbl_x, "X:%.1f", ax / G_MS2);
+	lv_label_set_text_fmt(lbl_y, "Y:%.1f", ay / G_MS2);
+	lv_label_set_text_fmt(lbl_z, "Z:%.1f", az / G_MS2);
 }
 
 static void create_legend(lv_obj_t *parent)
 {
 	lv_obj_t *legend = lv_obj_create(parent);
 	lv_obj_remove_style_all(legend);
-	lv_obj_set_size(legend, LV_HOR_RES, 30);
+	lv_obj_set_size(legend, LV_HOR_RES, 8);
 	lv_obj_align(legend, LV_ALIGN_TOP_LEFT, 0, 0);
-	lv_obj_set_style_bg_color(legend, lv_color_white(), 0);
+	lv_obj_set_style_bg_color(legend, lv_color_black(), 0);
 	lv_obj_set_style_bg_opa(legend, LV_OPA_COVER, 0);
 	lv_obj_set_flex_flow(legend, LV_FLEX_FLOW_ROW);
 	lv_obj_set_flex_align(legend, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER,
@@ -76,43 +77,51 @@ static void create_legend(lv_obj_t *parent)
 
 	static const struct {
 		const char *init;
-		lv_palette_t color;
+		lv_color_t color;
 		lv_obj_t **lbl;
 	} items[] = {
-		{"X: --", LV_PALETTE_RED, &lbl_x},
-		{"Y: --", LV_PALETTE_BLUE, &lbl_y},
-		{"Z: --", LV_PALETTE_GREEN, &lbl_z},
+		{"X:--", LV_COLOR_MAKE(255, 0, 0),   &lbl_x},
+		{"Y:--", LV_COLOR_MAKE(0, 128, 255), &lbl_y},
+		{"Z:--", LV_COLOR_MAKE(0, 255, 0),   &lbl_z},
 	};
 
 	for (int i = 0; i < 3; i++) {
 		lv_obj_t *lbl = lv_label_create(legend);
 		lv_label_set_text(lbl, items[i].init);
-		lv_obj_set_style_text_font(lbl, &lv_font_montserrat_16, 0);
-		lv_obj_set_style_text_color(lbl, lv_palette_main(items[i].color), 0);
+		lv_obj_set_style_text_font(lbl, &lv_font_tiny5, 0);
+		lv_obj_set_style_text_color(lbl, items[i].color, 0);
 		*items[i].lbl = lbl;
 	}
 }
 
-#define CHART_TOP_MARGIN 30
+#define CHART_TOP_MARGIN 8
 
 
 static void create_accelerometer_chart(lv_obj_t *parent)
 {
 	create_legend(parent);
 
+	/* Fundo preto na tela */
+	lv_obj_set_style_bg_color(parent, lv_color_black(), 0);
+	lv_obj_set_style_bg_opa(parent, LV_OPA_COVER, 0);
+
 	chart1 = lv_chart_create(parent);
 	lv_obj_set_size(chart1, LV_HOR_RES, LV_VER_RES - CHART_TOP_MARGIN);
 	lv_obj_align(chart1, LV_ALIGN_BOTTOM_MID, 0, 0);
+	lv_obj_set_style_bg_color(chart1, lv_color_black(), 0);
+	lv_obj_set_style_bg_opa(chart1, LV_OPA_COVER, 0);
+	lv_obj_set_style_border_width(chart1, 0, 0);
 	lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);
 	lv_chart_set_div_line_count(chart1, 5, 8);
+	lv_obj_set_style_line_color(chart1, lv_color_make(40, 40, 40), LV_PART_MAIN);
 	lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -2000, 2000); /* -/+ 2G scaled x100 */
 	lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_SHIFT);
 
-	ser_x = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED),
+	ser_x = lv_chart_add_series(chart1, lv_color_make(255, 0, 0),
 				    LV_CHART_AXIS_PRIMARY_Y);
-	ser_y = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_BLUE),
+	ser_y = lv_chart_add_series(chart1, lv_color_make(0, 128, 255),
 				    LV_CHART_AXIS_PRIMARY_Y);
-	ser_z = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_GREEN),
+	ser_z = lv_chart_add_series(chart1, lv_color_make(0, 255, 0),
 				    LV_CHART_AXIS_PRIMARY_Y);
 
 	lv_chart_set_point_count(chart1, CONFIG_SAMPLE_CHART_POINTS_PER_SERIES);
