@@ -1,7 +1,10 @@
 /*
- * OLED SPI - SSD1331 96x64 (colorido RGB)
+ * NKK ISF15ACP4 SmartSwitch - OLED SPI SSD1331 96x64 (colorido RGB)
  * Compatible: "solomon,ssd1331"
  * Uses MIPI DBI (SPI mode) interface
+ *
+ * Init values from: NKK Switches "Application Notes for the
+ * OLED Color SmartDisplay", Revision H
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -29,22 +32,22 @@
 		ssd1331: ssd1331@0 {
 			compatible = "solomon,ssd1331";
 			reg = <0>;
-			mipi-max-frequency = <8000000>;
+			mipi-max-frequency = <5000000>;
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			width = <96>;
 			height = <64>;
-			display-offset = <0>;
-			start-line = <0>;
-			multiplex-ratio = <63>;
-			phase-length = <0x31>;
-			oscillator-freq = <0xF0>;
-			precharge-time-a = <0x64>;
-			precharge-time-b = <0x78>;
-			precharge-time-c = <0x64>;
-			precharge-voltage = <0x3A>;
-			vcomh-voltage = <0x3E>;
-			current-att = <0x0F>;
-			remap-value = <0x72>;
+			display-offset = <0>;          /* A2H 00H */
+			start-line = <0>;              /* A1H 00H */
+			multiplex-ratio = <63>;        /* A8H 3FH */
+			phase-length = <0x17>;         /* B1H 17H */
+			oscillator-freq = <0xF0>;      /* B3H F0H */
+			precharge-time-a = <0x4F>;     /* 8AH 4FH */
+			precharge-time-b = <0x74>;     /* 8BH 74H */
+			precharge-time-c = <0x88>;     /* 8CH 88H */
+			precharge-voltage = <0x1D>;    /* BBH 1DH */
+			vcomh-voltage = <0x20>;        /* BEH 20H */
+			current-att = <0x0F>;          /* 87H 0FH */
+			remap-value = <0x6C>;          /* A0H 68H + bit2 BGR */
 		};
 	};
 };
