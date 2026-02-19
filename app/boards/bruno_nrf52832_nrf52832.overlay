@@ -33,7 +33,7 @@
         ili9341: ili9341@0 {
             compatible = "ilitek,ili9341";
             reg = <0>;
-            mipi-max-frequency = <16000000>;
+            mipi-max-frequency = <40000000>;
             mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 
             width = <240>;
@@ -64,21 +64,7 @@
     pinctrl-1 = <&spi1_sleep>;
     pinctrl-names = "default", "sleep";
 
-    /* FXLS8974 substituido pelo FXOS8700CQ (6-axis accel+mag) */
-    /* fxls8974: fxls8974@1 {
-        compatible = "nxp,fxls8974";
-        reg = <1>;
-        spi-max-frequency = <4000000>;
-        range = <2>;
-    }; */
-
-    /* FXOS8700 movido para I2C0 */
-    /* fxos8700: fxos8700@1 {
-        compatible = "nxp,fxos8700";
-        reg = <1>;
-        spi-max-frequency = <1000000>;
-        range = <2>;
-    }; */
+ 
 
     xpt2046: xpt2046@1 {
         compatible = "xptek,xpt2046";

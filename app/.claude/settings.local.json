@@ -12,7 +12,8 @@
       "Bash(where west:*)",
       "Bash(ls:*)",
       "WebFetch(domain:docs.zephyrproject.org)",
-      "WebFetch(domain:devzone.nordicsemi.com)"
+      "WebFetch(domain:devzone.nordicsemi.com)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []
