@@ -1,103 +1,102 @@
-.. zephyr:code-sample:: lvgl-demos
-   :name: LVGL demos
-   :relevant-api: display_interface
-
-   Run LVGL built-in demos.
+LVGL Accelerometer Chart - Multi-Display Reference
+===================================================
 
 Overview
 ********
 
-A sample showcasing upstream LVGL demos.
+Real-time accelerometer chart using **LVGL** on **Zephyr RTOS** with an
+**NXP FXOS8700CQ** sensor (I2C) on a custom **nRF52832** board.
 
-* Music
-      The music player demo shows what kind of modern, smartphone-like user interfaces can be created on LVGL.
-* Benchmark
-      The benchmark demo tests the performance in various cases. For example rectangle, border, shadow, text, image blending, image transformation, blending modes, etc.
-* Stress
-      A stress test for LVGL. It contains a lot of object creation, deletion, animations, styles usage, and so on. It can be used if there is any memory corruption during heavy usage or any memory leaks.
-* Widgets
-      Shows how the widgets look like out of the box using the built-in material theme.
-* Keypad and Encoder
-      Shows how to control widget with a keypad and hardware encoder.
-* Render
-      Collection of multiple rendering tests.
+Each git branch contains a fully working configuration for a specific display.
+Switch branches to get the complete overlay, Kconfig and source code ready to
+build and flash.
 
-More details can be found in `LVGL demos Readme`_.
+Available Displays
+******************
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 15 15 20
+
+   * - Branch
+     - Display
+     - Resolution
+     - Interface
+     - Notes
+   * - ``display/sh1106-128x64-mono``
+     - SH1106 (SSD1306-compatible)
+     - 128x64
+     - SPI
+     - Monochrome OLED, 1-bit color depth. Line styles: X=solid, Y=dotted, Z=dashed.
+   * - ``display/ssd1331-nkk-smartswitch``
+     - NKK ISF15ACP4 SmartSwitch
+     - 96x64
+     - SPI (MIPI DBI)
+     - RGB OLED built into a pushbutton switch. Uses NKK contrast values.
+   * - ``display/ssd1331-96x64-rgb``
+     - SSD1331 (generic module)
+     - 96x64
+     - SPI (MIPI DBI)
+     - Chinese RGB OLED module.
+   * - ``display/st7789v-240x240``
+     - ST7789V
+     - 240x240
+     - SPI (MIPI DBI)
+     - Small square IPS TFT display.
+   * - ``display/st7789v-240x320``
+     - ST7789V
+     - 240x320
+     - SPI (MIPI DBI)
+     - Standard IPS TFT display.
+   * - ``display/ili9341-240x320``
+     - ILI9341
+     - 240x320
+     - SPI (MIPI DBI)
+     - TFT display with FXOS8700CQ accelerometer chart.
+   * - ``display/ili9341-240x320-touch``
+     - ILI9341 + XPT2046
+     - 240x320
+     - SPI (MIPI DBI)
+     - Same as above with XPT2046 resistive touch support.
+
+Hardware
+********
+
+* **MCU**: nRF52832 (custom board ``bruno_nrf52832``)
+* **Sensor**: NXP FXOS8700CQ accelerometer on I2C0 (address 0x1E)
+* **Display**: varies per branch (see table above), all on SPI1
+
+Pin assignments (directly on the display or via MIPI DBI, depending on the
+branch):
+
+* SCK: P0.11
+* MOSI: P0.12
+* CS: P0.19
+* DC: P0.20
+* RESET: P0.22
+
+Building and Flashing
+*********************
+
+1. Clone the repository and checkout the branch for your display::
+
+      git clone <repo-url>
+      git checkout display/sh1106-128x64-mono   # example
+
+2. Build and flash::
+
+      west build -b bruno_nrf52832/nrf52832
+      west flash
 
 Requirements
 ************
 
-* A board with display, ideally with 480x272 resolution or higher.
-* A pointer input device: touchpad, mouse, or touch screen capable display, compatible with :dtcompatible:`zephyr,lvgl-pointer-input`.
+* nRF Connect SDK (tested with v3.2.1 / Zephyr 4.2)
+* A custom ``bruno_nrf52832`` board definition (or adapt the overlay to your board)
+* FXOS8700CQ accelerometer wired to I2C0
+* One of the supported displays wired to SPI1
 
-Note that other input devices types are not demonstrated in these demos, namely keyboards, keypads (:dtcompatible:`zephyr,lvgl-keypad-input`), rotary encoders (:dtcompatible:`zephyr,lvgl-encoder-input`) and hardware buttons (:dtcompatible:`zephyr,lvgl-button-input`).
+License
+*******
 
-Building and Running
-********************
-
-Example building for :zephyr:board:`mimxrt1060_evk`:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :board: mimxrt1060_evk
-   :goals: build flash
-
-These demos can be built for simulated display environment as follows:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_MUSIC=y
-   :goals: run
-   :compact:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_BENCHMARK=y
-   :goals: run
-   :compact:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_STRESS=y
-   :goals: run
-   :compact:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_WIDGETS=y
-   :goals: run
-   :compact:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_KEYPAD_AND_ENCODER=y
-   :goals: run
-   :compact:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_RENDER=y
-   :goals: run
-   :compact:
-
-Alternatively, if building from a 64-bit host machine, the previous target
-board argument may also be replaced by ``native_sim/native/64``.
-
-References
-**********
-
-.. target-notes::
-
-.. _LVGL demos Readme: https://github.com/zephyrproject-rtos/lvgl/blob/zephyr/demos/README.md
+Apache-2.0
