@@ -35,8 +35,10 @@
 		st7789v_waveshare_240x240: st7789v@0 {
 			compatible = "sitronix,st7789v";
 			reg = <0>;
-			mipi-max-frequency = <8000000>;         /* 8MHz - safe for nRF52832 */
+			mipi-max-frequency = <40000000>;         /* 8MHz - safe for nRF52832 */
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			mipi-cpol;
+			mipi-cpha;
 			width = <240>;
 			height = <320>;
 			x-offset = <0>;
@@ -45,7 +47,7 @@
 			gctrl = <0x35>;
 			vrhs = <0x12>;
 			vdvs = <0x20>;
-			mdac = <0x08>;	/* bit3=1: BGR panel */
+			mdac = <0x00>;	/* bit3=0: RGB panel */
 			gamma = <0x01>;
 			colmod = <0x05>;
 			lcm = <0x2c>;
