@@ -1,103 +1,63 @@
-.. zephyr:code-sample:: lvgl-demos
-   :name: LVGL demos
-   :relevant-api: display_interface
-
-   Run LVGL built-in demos.
+LVGL Accelerometer Chart - SH1106 128x64 Monochrome OLED
+=========================================================
 
 Overview
 ********
 
-A sample showcasing upstream LVGL demos.
+Real-time accelerometer chart using **LVGL** on **Zephyr RTOS** with an
+**NXP FXOS8700CQ** sensor on a **128x64 monochrome OLED** display driven
+by a **SH1106** controller (SSD1306-compatible) via SPI.
 
-* Music
-      The music player demo shows what kind of modern, smartphone-like user interfaces can be created on LVGL.
-* Benchmark
-      The benchmark demo tests the performance in various cases. For example rectangle, border, shadow, text, image blending, image transformation, blending modes, etc.
-* Stress
-      A stress test for LVGL. It contains a lot of object creation, deletion, animations, styles usage, and so on. It can be used if there is any memory corruption during heavy usage or any memory leaks.
-* Widgets
-      Shows how the widgets look like out of the box using the built-in material theme.
-* Keypad and Encoder
-      Shows how to control widget with a keypad and hardware encoder.
-* Render
-      Collection of multiple rendering tests.
+Display
+*******
 
-More details can be found in `LVGL demos Readme`_.
+* **Controller**: SH1106 (``sinowealth,sh1106``)
+* **Resolution**: 128x64
+* **Color**: Monochrome (1-bit), OLED
+* **Interface**: SPI native (no MIPI DBI)
+* **Color depth**: ``CONFIG_LV_COLOR_DEPTH_1=y``
 
-Requirements
-************
+The SH1106 has 132 internal columns but only 128 visible, so
+``segment-offset = <2>`` is used in the devicetree overlay.
 
-* A board with display, ideally with 480x272 resolution or higher.
-* A pointer input device: touchpad, mouse, or touch screen capable display, compatible with :dtcompatible:`zephyr,lvgl-pointer-input`.
+Chart series are differentiated by line style since color is not available:
 
-Note that other input devices types are not demonstrated in these demos, namely keyboards, keypads (:dtcompatible:`zephyr,lvgl-keypad-input`), rotary encoders (:dtcompatible:`zephyr,lvgl-encoder-input`) and hardware buttons (:dtcompatible:`zephyr,lvgl-button-input`).
+* **X axis**: solid line
+* **Y axis**: dotted line
+* **Z axis**: dashed line
 
-Building and Running
-********************
+Hardware
+********
 
-Example building for :zephyr:board:`mimxrt1060_evk`:
+* **MCU**: nRF52832 (custom board ``bruno_nrf52832``)
+* **Sensor**: NXP FXOS8700CQ on I2C0 (address 0x1E)
+* **Display**: SH1106 128x64 OLED on SPI1
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :board: mimxrt1060_evk
-   :goals: build flash
+Pinout
+------
 
-These demos can be built for simulated display environment as follows:
+* SCK: P0.11
+* MOSI: P0.12
+* CS: P0.19
+* DC: P0.20
+* RESET: P0.22
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_MUSIC=y
-   :goals: run
-   :compact:
+Building and Flashing
+*********************
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_BENCHMARK=y
-   :goals: run
-   :compact:
+::
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_STRESS=y
-   :goals: run
-   :compact:
+    west build -b bruno_nrf52832/nrf52832
+    west flash
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_WIDGETS=y
-   :goals: run
-   :compact:
+Other Displays
+**************
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_KEYPAD_AND_ENCODER=y
-   :goals: run
-   :compact:
+This repository has one branch per display configuration.
+See all available branches at the
+`repository page <https://github.com/btondin/LVGL_AULA>`_.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :host-os: unix
-   :board: native_sim
-   :gen-args: -DCONFIG_LV_Z_DEMO_RENDER=y
-   :goals: run
-   :compact:
+License
+*******
 
-Alternatively, if building from a 64-bit host machine, the previous target
-board argument may also be replaced by ``native_sim/native/64``.
-
-References
-**********
-
-.. target-notes::
-
-.. _LVGL demos Readme: https://github.com/zephyrproject-rtos/lvgl/blob/zephyr/demos/README.md
+Apache-2.0
