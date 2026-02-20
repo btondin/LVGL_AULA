@@ -46,7 +46,7 @@ west flash
 ## Project Structure
 
 ```
-LVGL_AULA/
+zephyr-lvgl-accelerometer-chart/
 ├── app/
 │   ├── src/
 │   │   └── main.c                              # Application
